@@ -1,24 +1,75 @@
 package edu.quinnipiac.ser210.sportsview;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import java.io.InputStream;
+import java.util.HashMap;
 
 public class Team_Activity extends AppCompatActivity {
+
+
+    // Create a BackEnd Class to avoid passing back end data between classes
+    // Use instance of BackEnd class to retrieve HashMap/Arrays
+    //
+    private HashMap<String, String> teamHashMap = new HashMap<String, String>();
+    private HashMap<String, String> teamLogo = new HashMap<String, String>();
+    private String[] goalsFor = new String[2];
+    private String[] goalsAgainst = new String[2];
+    ImageView flag;
+    String userInput;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_team_);
 
+        // Currently passing team data through hasMaps and arrays using Intents.
+        // Will update code to use use an instance of a backEnd class instead.
+        Intent intent = getIntent();
+        teamHashMap = (HashMap<String, String>) intent.getSerializableExtra("teamData");
+        teamLogo = (HashMap<String, String>) intent.getSerializableExtra("teamFlag");
+        goalsFor = intent.getStringArrayExtra("goals");
+        goalsAgainst = intent.getStringArrayExtra("goalsAgainst");
+
+        userInput = (String) intent.getExtras().get("input");
+
+        // Setting the text for each textView with information pulled off the API
+        TextView teamName = (TextView) findViewById(R.id.teamName);
+        teamName.setText(userInput);
+
+        TextView forHomeGoals = findViewById(R.id.homeGoalsForValue);
+        forHomeGoals.setText("Home: " + goalsFor[0]);
+
+        TextView forAwayGoals = findViewById(R.id.awayGoalsForValue);
+        forAwayGoals.setText("Away: " + goalsFor[1]);
+
+        TextView AgstHomeGoals = findViewById(R.id.homeGoalsAgstValue);
+        AgstHomeGoals.setText("Home: " + goalsAgainst[0]);
+
+        TextView AgstAwayGoals = findViewById(R.id.awayGoalsAgstValue);
+        AgstAwayGoals.setText("Away: " + goalsAgainst[1]);
+
+        // Creating an instance of an Async taks to download each teams Flag
+        flag = (ImageView) findViewById(R.id.teamFlag);
+        new DownloadImage().execute(teamLogo.get(teamHashMap.get(userInput)));
+
+
+
         configureLineUpButton();
         configureReturnButton();
     }
 
-
+    //
     private void configureLineUpButton(){
         ImageButton playButton = (ImageButton) findViewById(R.id.lineUp_button);
         playButton.setOnClickListener(new View.OnClickListener() {
@@ -41,5 +92,42 @@ public class Team_Activity extends AppCompatActivity {
         });
     }
 
+    //public String[] getGoalsFor(){
+        //return goalsFor;
+    //}
 
+
+    // DownloadImage AsyncTask
+    private class DownloadImage extends AsyncTask<String, Void, Bitmap> {
+
+
+        @Override
+        protected Bitmap doInBackground(String... URL) {
+
+            String imageURL = URL[0];
+
+            Bitmap bitmap = null;
+            try {
+                // Download Image from URL
+                InputStream input = new java.net.URL(imageURL).openStream();
+                // Decode Bitmap
+                bitmap = BitmapFactory.decodeStream(input);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return bitmap;
+        }
+
+
+        @Override
+        protected void onPostExecute(Bitmap result) {
+            // Set the bitmap into ImageView
+            flag.setImageBitmap(result);
+        }
+    }
 }
+
+
+
+
+
